@@ -4,7 +4,7 @@ from django.contrib import messages
 from .models import Screenshot, TrackingSession, Project
 from django.conf import settings
 import os
-import pyautogui
+
 from datetime import datetime
 import time
 from threading import Thread
@@ -16,7 +16,7 @@ from django.contrib import messages
 from .models import Screenshot, TrackingSession, Project
 from django.conf import settings
 import os
-import pyautogui
+from PIL import ImageGrab  # Replace pyautogui with this
 from datetime import datetime
 import time
 from threading import Thread
@@ -88,6 +88,8 @@ def stop_tracking(request):
     return redirect('dashboard')
 
 
+
+
 def take_screenshots(user, session_id, project_id):
     session = TrackingSession.objects.get(id=session_id)
     project = Project.objects.get(id=project_id)
@@ -95,14 +97,13 @@ def take_screenshots(user, session_id, project_id):
 
     while session.is_active:
         try:
-            # Take screenshot
-            screenshot = pyautogui.screenshot()
+            # Take screenshot using Pillow's ImageGrab (works on Linux with Xvfb)
+            screenshot = ImageGrab.grab()  # <-- REPLACED pyautogui.screenshot()
 
             # Activity detection - compare with previous screenshot if exists
             is_active = True  # Default to active
             if last_screenshot:
                 # Convert screenshots to numpy arrays for comparison
-                import numpy as np
                 current_img = np.array(screenshot)
                 last_img = np.array(last_screenshot)
 
@@ -117,31 +118,21 @@ def take_screenshots(user, session_id, project_id):
                 if (changed_pixels / total_pixels) < 0.01:
                     is_active = False
 
-            # Optimize image
+            # Optimize image (same as before)
             img_byte_arr = io.BytesIO()
-
-            # Resize if needed (example: max width 1920px)
             if screenshot.size[0] > 1920:
                 new_height = int(1920 * screenshot.size[1] / screenshot.size[0])
                 screenshot = screenshot.resize((1920, new_height), Image.Resampling.LANCZOS)
-
-            # Save as WebP with 85% quality
             screenshot.save(img_byte_arr, format='WEBP', quality=85)
 
-            # Generate filename
+            # Save to database (same as before)
             timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
             filename = f'screenshot_{user.username}_{project.name}_{timestamp}.webp'
-
-            # Save to database
-            screenshot_obj = Screenshot(
-                user=user,
-                project=project,
-                tracking_session=session
-            )
+            screenshot_obj = Screenshot(user=user, project=project, tracking_session=session)
             screenshot_obj.image.save(filename, img_byte_arr)
             screenshot_obj.save()
 
-            # Create activity log entry
+            # Log activity (same as before)
             ActivityLog.objects.create(
                 user=user,
                 session=session,
@@ -149,25 +140,15 @@ def take_screenshots(user, session_id, project_id):
                 screenshot=screenshot_obj
             )
 
-            # Store current screenshot for next comparison
-            last_screenshot = screenshot
-
+            last_screenshot = screenshot  # Update for next comparison
             time.sleep(30)
             session.refresh_from_db()
 
         except Exception as e:
             print(f"Error taking screenshot: {e}")
-            # Log inactive if error occurs
-            ActivityLog.objects.create(
-                user=user,
-                session=session,
-                is_active=False,
-                screenshot=None
-            )
+            ActivityLog.objects.create(user=user, session=session, is_active=False, screenshot=None)
             time.sleep(30)
             session.refresh_from_db()
-            continue
-
 
 def get_storage_usage(user):
     from django.db.models import Sum
