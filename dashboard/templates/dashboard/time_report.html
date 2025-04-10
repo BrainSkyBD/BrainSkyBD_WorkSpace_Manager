@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load duration_tags %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Time Report</h2>
+        <span class="badge bg-primary">Personal</span>
+    </div>
+
+    <!-- Summary Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Time Summary</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Project</th>
+                            <th class="text-end">Total Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project, time in projects_time %}
+                        <tr>
+                            <td>{{ project }}</td>
+                            <td class="text-end">
+                                <span class="badge-time">
+                                    <i class="bi bi-clock me-1"></i>{{ time|duration_format }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center py-4 text-muted">
+                                <i class="bi bi-exclamation-circle me-1"></i>No project time data available
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        <!-- Daily Totals -->
+                        <tr class="table-light">
+                            <th colspan="2" class="pt-3">
+                                <i class="bi bi-calendar-day me-2"></i>Daily Totals
+                            </th>
+                        </tr>
+                        {% for date, total in daily_totals %}
+                        <tr>
+                            <td>{{ date }}</td>
+                            <td class="text-end">
+                                <span class="badge-time">
+                                    <i class="bi bi-clock me-1"></i>{{ total|duration_format }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        <!-- Grand Total -->
+                        <tr class="table-primary">
+                            <th>Grand Total</th>
+                            <th class="text-end">
+                                <span class="badge bg-white text-primary">
+                                    <i class="bi bi-clock-history me-1"></i>{{ projects_time|sum_time|duration_format }}
+                                </span>
+                            </th>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sessions Card -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>All Sessions</h5>
+            <span class="badge bg-primary">{{ sessions|length }} sessions</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Project</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th class="text-end">Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for session in sessions %}
+                        <tr>
+                            <td>
+                                {% if session.project %}
+                                    <span class="badge bg-light text-dark">
+                                        <i class="bi bi-kanban me-1"></i>{{ session.project.name }}
+                                    </span>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ session.start_time|date:"M j, Y g:i A" }}</td>
+                            <td>
+                                {% if session.end_time %}
+                                    {{ session.end_time|date:"M j, Y g:i A" }}
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">In Progress</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <span class="badge-time">
+                                    <i class="bi bi-clock me-1"></i>{{ session.total_time|duration_format }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">
+                                <i class="bi bi-exclamation-circle me-1"></i>No tracking sessions available
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

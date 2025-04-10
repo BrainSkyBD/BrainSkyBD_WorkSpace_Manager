@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="bi bi-graph-up me-2"></i>Admin Analytics</h2>
+        <span class="badge bg-primary">Admin View</span>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Filters</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label fw-medium">From Date</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label fw-medium">To Date</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="user_id" class="form-label fw-medium">User</label>
+                    <select class="form-select" id="user_id" name="user_id">
+                        <option value="">All Users</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if selected_user == user.id %}selected{% endif %}>
+                            {{ user.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="project_id" class="form-label fw-medium">Project</label>
+                    <select class="form-select" id="project_id" name="project_id">
+                        <option value="">All Projects</option>
+                        {% for project in projects %}
+                        <option value="{{ project.id }}" {% if selected_project == project.id %}selected{% endif %}>
+                            {{ project.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-filter-circle me-1"></i>Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Time Summary Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Time Summary</h5>
+            <span class="badge bg-primary">{{ time_by_user_project|length }} records</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th><i class="bi bi-person me-1"></i>User</th>
+                            <th><i class="bi bi-kanban me-1"></i>Project</th>
+                            <th class="text-end"><i class="bi bi-stopwatch me-1"></i>Total Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in time_by_user_project %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm bg-light rounded-circle me-2 d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-person text-primary"></i>
+                                    </div>
+                                    {{ item.user__username }}
+                                </div>
+                            </td>
+                            <td>{{ item.project__name }}</td>
+                            <td class="text-end">
+                                <span class="badge-time">
+                                    <i class="bi bi-clock me-1"></i>{{ item.total_time }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center py-4 text-muted">
+                                <i class="bi bi-exclamation-circle me-1"></i>No time tracking data available
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Add this card after time summary -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-activity me-2"></i>Employee Activity Status</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Status</th>
+                        <th>Activity Rate</th>
+                        <th>Last Active</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in users_data %}
+                    <tr>
+                        <td>{{ data.user.username }}</td>
+                        <td>
+                            <span class="badge bg-{% if data.activity.active %}success{% else %}warning{% endif %}">
+                                {% if data.activity.active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="progress" style="height: 24px;">
+                                <div class="progress-bar bg-{% if data.activity.active %}success{% else %}warning{% endif %}"
+                                     role="progressbar"
+                                     style="width: {{ data.activity.rate }}%"
+                                     aria-valuenow="{{ data.activity.rate }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                    {{ data.activity.rate }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if data.activity.last_seen %}
+                                {{ data.activity.last_seen|timesince }} ago
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <!-- Screenshots Card -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-image me-2"></i>Screenshots</h5>
+            <span class="badge bg-primary">{{ screenshots|length }} images</span>
+        </div>
+        <div class="card-body">
+            {% if screenshots %}
+            <div class="row g-3">
+                {% for screenshot in screenshots %}
+                <div class="col-md-4 col-lg-3">
+                    <div class="screenshot-card card h-100">
+                        <img src="{{ screenshot.image.url }}" class="card-img-top" alt="Screenshot">
+                        <div class="card-body">
+                            <h6 class="card-title mb-1">{{ screenshot.user.username }}</h6>
+                            <p class="card-text small text-muted mb-2">
+                                <i class="bi bi-kanban me-1"></i>{{ screenshot.project.name }}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-clock me-1"></i>{{ screenshot.timestamp|date:"g:i A" }}
+                                </small>
+                                <small class="text-muted">{{ screenshot.file_size|filesizeformat }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-exclamation-circle display-6 mb-3"></i>
+                <p class="mb-0">No screenshots found for the selected filters</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Employee Dashboard</h2>
+        <span class="badge bg-primary">Live</span>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-activity me-2"></i>Tracking Status</h5>
+        </div>
+        <div class="card-body">
+            {% if active_session %}
+                <div class="alert alert-success d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <div>
+                        <strong>Active Tracking:</strong> {{ active_session.project.name }}
+                        <div class="text-muted small mt-1">
+                            Started {{ active_session.start_time|date:"M j, Y g:i A" }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center mb-4">
+                    <h4 class="mb-0 me-3"><i class="bi bi-clock-history me-2"></i>Elapsed Time:</h4>
+                    <h3 id="elapsedTime" class="mb-0">00:00:00</h3>
+                </div>
+
+                <div class="d-flex">
+                    <a href="{% url 'stop_tracking' %}" class="btn btn-danger me-3">
+                        <i class="bi bi-stop-circle me-1"></i>Stop Tracking
+                    </a>
+                    <a href="{% url 'time_report' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-file-earmark-text me-1"></i>View Reports
+                    </a>
+                </div>
+            {% else %}
+                <div class="alert alert-secondary d-flex align-items-center">
+                    <i class="bi bi-pause-circle-fill me-2"></i>
+                    <div>Tracking is currently inactive</div>
+                </div>
+
+                <form method="post" action="{% url 'start_tracking' %}">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label for="project" class="form-label fw-medium">Select Project</label>
+                        <select name="project" id="project" class="form-select" required>
+                            <option value="">Choose a project...</option>
+                            {% for project in projects %}
+                                <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-play-circle me-1"></i>Start Tracking
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if active_session %}
+<script>
+    // Convert server UTC time to local time
+    const utcStartTime = new Date("{{ active_session.start_time|date:'c' }}");
+    const startTime = new Date(utcStartTime.getTime() + utcStartTime.getTimezoneOffset() * 00000);
+
+    function updateElapsedTime() {
+        const now = new Date();
+        const elapsedMs = now - startTime;
+
+        // Format as HH:MM:SS
+        const formattedTime = new Date(elapsedMs).toISOString().substr(11, 8);
+        document.getElementById('elapsedTime').textContent = formattedTime;
+    }
+
+    // Update every second
+    updateElapsedTime();
+    setInterval(updateElapsedTime, 1000);
+</script>
+{% endif %}
+{% endblock %}
