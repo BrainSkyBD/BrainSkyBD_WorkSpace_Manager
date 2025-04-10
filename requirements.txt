@@ -34,7 +34,7 @@ pillow
 protobuf
 psutil
 ptyprocess
-PyAutoGUI
+
 PyGetWindow
 PyJWT
 pymacaroons
