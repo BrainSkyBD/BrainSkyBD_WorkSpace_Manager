@@ -30,6 +30,10 @@ ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = [
     'https://workspace.brainskybd.com',
+    "https://www.workspace.brainskybd.com",
+    "http://localhost:8000",  # for local testing
+    "http://127.0.0.1:8000",
+    
 ]
 
 
